@@ -1,0 +1,43 @@
+# Hermes Avatar Configuration
+
+# Screen capture settings
+screen_capture:
+  interval_seconds: 30  # 5-60 seconds (configurable)
+  enabled: true
+
+# API settings
+api:
+  endpoint: "http://localhost:8000/v1/chat/completions"  # Hermes local endpoint
+  model: "qwen3.5-122b"
+  timeout: 10
+  format: "base64"  # Send screenshots as base64
+
+# Avatar settings
+avatar:
+  width: 200
+  height: 200
+  position: "top-right"  # top-left, top-right, bottom-left, bottom-right
+  always_on_top: true
+  transparent_background: false
+
+# Animation settings
+animation:
+  fps: 12
+  idle_frames: 4
+  speak_frames: 6
+  think_frames: 3
+  alert_frames: 4
+
+# Chat window settings
+chat_window:
+  width: 400
+  height: 300
+  position: "below_avatar"  # below, right, left
+  auto_open_on_message: true
+
+# Hermes integration
+hermes:
+  profile: "default"
+  send_screenshots: true
+  receive_suggestions: true
+  api_key_env: "HERMES_API_KEY"

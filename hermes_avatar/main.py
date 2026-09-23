@@ -1,0 +1,221 @@
+"""
+Main application - Hermes Girl Avatar desktop companion.
+
+Combines screen capture, chat window, and sprite animation into a unified
+desktop application that stays on top and interacts with Hermes via API.
+"""
+
+import sys
+import yaml
+import time
+from pathlib import Path
+from PyQt6.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QVBoxLayout, 
+    QHBoxLayout, QLabel, QPushButton, QSystemTrayIcon, QMenu
+)
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QIcon, QAction
+
+from .screen_capture import ScreenCapture
+from .chat_window import ChatWindow
+from .sprite_animator import SpriteAnimator
+
+
+class HermesAvatar(QMainWindow):
+    """Main application window for Hermes Girl Avatar."""
+    
+    def __init__(self, config_path: str = None):
+        super().__init__()
+        
+        if config_path is None:
+            config_path = Path(__file__).parent.parent / "config.yaml"
+        
+        self.config = self._load_config(config_path)
+        self.avatar_config = self.config.get("avatar", {})
+        
+        # Initialize components
+        self.screen_capture = ScreenCapture(config_path)
+        self.sprite_animator = SpriteAnimator(config_path)
+        self.chat_window = None
+        
+        # Setup UI
+        self.setup_ui()
+        self.setup_tray()
+        
+        # Start periodic screen capture
+        if self.config.get("screen_capture", {}).get("enabled", True):
+            self.start_screen_capture()
+        
+    def _load_config(self, config_path: str) -> dict:
+        with open(config_path, 'r') as f:
+            return yaml.safe_load(f)
+    
+    def setup_ui(self):
+        """Set up the main application UI."""
+        # Window properties
+        width = self.avatar_config.get("width", 200)
+        height = self.avatar_config.get("height", 200)
+        
+        self.setWindowTitle("Hermes Girl Avatar")
+        self.setFixedSize(width, height)
+        
+        # Always on top
+        self.setWindowFlags(
+            Qt.WindowType.WindowStaysOnTopHint |
+            Qt.WindowType.FramelessWindowHint
+        )
+        
+        # Central widget
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        
+        # Main layout
+        layout = QVBoxLayout(central_widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        
+        # Avatar display
+        self.avatar_label = self.sprite_animator.create_avatar_widget(width, height)
+        self.avatar_label.mousePressEvent = self._on_avatar_click
+        layout.addWidget(self.avatar_label)
+        
+        # Position window
+        self._position_window()
+        
+        # Show window
+        self.show()
+    
+    def _position_window(self):
+        """Position window based on config."""
+        position = self.avatar_config.get("position", "top-right")
+        screen = QApplication.primaryScreen().geometry()
+        
+        if position == "top-right":
+            x = screen.width() - self.width() - 20
+            y = 20
+        elif position == "top-left":
+            x = 20
+            y = 20
+        elif position == "bottom-left":
+            x = 20
+            y = screen.height() - self.height() - 20
+        elif position == "bottom-right":
+            x = screen.width() - self.width() - 20
+            y = screen.height() - self.height() - 20
+        else:
+            x, y = 100, 100
+        
+        self.move(x, y)
+    
+    def _on_avatar_click(self, event):
+        """Handle avatar click - open chat window."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.open_chat_window()
+    
+    def open_chat_window(self):
+        """Open or focus the chat window."""
+        if self.chat_window is None:
+            self.chat_window = ChatWindow()
+            self.chat_window.message_sent.connect(self._handle_user_message)
+        
+        self.chat_window.show()
+        self.chat_window.raise_()
+        self.chat_window.activateWindow()
+    
+    def _handle_user_message(self, message: str):
+        """Handle message from user to Hermes."""
+        # TODO: Send message to Hermes API
+        print(f"User message: {message}")
+        
+        # Show thinking animation
+        self.sprite_animator.set_state("think")
+        
+        # Simulate response (replace with actual API call)
+        QTimer.singleShot(2000, lambda: self._show_hermes_response("Questo è un messaggio di test da Hermes!"))
+    
+    def _show_hermes_response(self, text: str):
+        """Show Hermes response in chat window."""
+        if self.chat_window:
+            self.chat_window.show_hermes_suggestion(text)
+        
+        # Change back to idle
+        self.sprite_animator.set_state("idle")
+    
+    def start_screen_capture(self):
+        """Start periodic screen capture and send to Hermes."""
+        def on_capture_result(result):
+            if result.get("success"):
+                analysis = result.get("analysis")
+                print(f"Hermes analysis: {analysis}")
+                self._show_hermes_response(analysis)
+            else:
+                error = result.get("error")
+                print(f"Capture error: {error}")
+        
+        self.screen_capture.start_periodic_capture(callback=on_capture_result)
+    
+    def setup_tray(self):
+        """Set up system tray icon."""
+        # Create tray icon
+        tray_icon = QSystemTrayIcon(self)
+        # tray_icon.setIcon(QIcon(":icons/avatar.png"))  # TODO: Add icon
+        
+        # Create context menu
+        tray_menu = QMenu()
+        
+        show_action = QAction("Mostra", self)
+        show_action.triggered.connect(self.show)
+        tray_menu.addAction(show_action)
+        
+        chat_action = QAction("Chat", self)
+        chat_action.triggered.connect(self.open_chat_window)
+        tray_menu.addAction(chat_action)
+        
+        capture_action = QAction("Toggle Screen Capture", self)
+        capture_action.triggered.connect(self.toggle_screen_capture)
+        tray_menu.addAction(capture_action)
+        
+        quit_action = QAction("Esci", self)
+        quit_action.triggered.connect(QApplication.quit)
+        tray_menu.addAction(quit_action)
+        
+        tray_icon.setContextMenu(tray_menu)
+        tray_icon.show()
+        
+        # Store reference to prevent garbage collection
+        self.tray_icon = tray_icon
+    
+    def toggle_screen_capture(self):
+        """Toggle screen capture on/off."""
+        if self.screen_capture.is_running:
+            self.screen_capture.stop_periodic_capture()
+            print("Screen capture stopped")
+        else:
+            self.screen_capture.start_periodic_capture()
+            print("Screen capture started")
+    
+    def closeEvent(self, event):
+        """Handle window close - minimize to tray instead of quit."""
+        if self.tray_icon.isVisible():
+            self.hide()
+            event.ignore()
+        else:
+            event.accept()
+
+
+def main():
+    """Main entry point."""
+    app = QApplication(sys.argv)
+    app.setApplicationName("Hermes Girl Avatar")
+    
+    # Set application style
+    app.setStyle("Fusion")
+    
+    # Create and show main window
+    window = HermesAvatar()
+    
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()
