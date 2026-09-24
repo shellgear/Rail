@@ -168,8 +168,8 @@ def setup_screen_capture():
         with open(config_path, 'r') as f:
             config = yaml.safe_load(f)
         
-        # Handle empty YAML file (safe_load returns None)
-        if config is None:
+        # Handle empty or invalid YAML file (safe_load may return None, string, or other types)
+        if config is None or not isinstance(config, dict):
             config = {}
         
         if 'screen_capture' not in config:
@@ -211,8 +211,8 @@ def setup_avatars():
         with open(config_path, 'r') as f:
             config = yaml.safe_load(f)
         
-        # Handle empty YAML file (safe_load returns None)
-        if config is None:
+        # Handle empty or invalid YAML file (safe_load may return None, string, or other types)
+        if config is None or not isinstance(config, dict):
             config = {}
         
         if 'avatar' not in config:
