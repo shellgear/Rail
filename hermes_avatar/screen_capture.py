@@ -48,11 +48,11 @@ class ScreenCapture:
         Returns:
             JPEG-encoded screenshot bytes (no file saved)
         """
-        # Use PIL to capture screen via X11 (Linux)
-        # Alternative: use PyQt6's QScreen.grabWindow()
         try:
             from PyQt6.QtWidgets import QApplication
             from PyQt6.QtGui import QGuiApplication
+            from PyQt6.QtCore import QBuffer, QIODevice
+            from PyQt6.QtGui import QImage
             
             app = QApplication.instance()
             if app is None:
@@ -61,30 +61,29 @@ class ScreenCapture:
             screen = QGuiApplication.primaryScreen()
             pixmap = screen.grabWindow(0)  # Grab entire screen
             
-            # Convert to PIL Image
-            image = QPixmap.toImage(pixmap)
-            buffer = io.BytesIO()
+            # Convert to QImage and save to QBuffer
+            image = pixmap.toImage()
+            buffer = QBuffer()
+            buffer.open(QBuffer.OpenModeFlag.WriteOnly)
+            image.save(buffer, "JPEG", 85)  # Quality 85%
+            buffer.close()
             
-            # Save as JPEG in memory
-            # Note: PyQt6 doesn't directly export to PIL, so we use a workaround
-            # For production, consider using mss or pyscreenshot
-            pixmap.save(buffer, "JPEG")
-            buffer.seek(0)
-            
-            return buffer.getvalue()
+            # Get bytes from buffer
+            image_data = buffer.data()
+            return bytes(image_data)
             
         except Exception as e:
-            print(f"Screen capture error: {e}")
+            print(f"Screen capture error (PyQt6): {e}")
             # Fallback: try PIL's ImageGrab if available
             try:
                 from PIL import ImageGrab
                 img = ImageGrab.grab()
                 buffer = io.BytesIO()
-                img.save(buffer, format="JPEG")
+                img.save(buffer, format="JPEG", quality=85)
                 buffer.seek(0)
                 return buffer.getvalue()
             except ImportError:
-                raise ImportError("PIL ImageGrab not available. Install: pip install pillow")
+                raise ImportError("PyQt6 failed and PIL ImageGrab not available. Install: pip install pillow")
     
     def send_to_hermes(self, screenshot_bytes: bytes) -> dict:
         """

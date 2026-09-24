@@ -179,9 +179,18 @@ class HermesAvatar(QMainWindow):
     
     def setup_tray(self):
         """Set up system tray icon."""
-        # Create tray icon
+        # Create tray icon with a simple icon
         tray_icon = QSystemTrayIcon(self)
-        # tray_icon.setIcon(QIcon(":icons/avatar.png"))  # TODO: Add icon
+        
+        # Create a simple icon programmatically (avoid file dependency)
+        from PyQt6.QtGui import QIcon, QPixmap, QPainter, QColor
+        icon_pixmap = QPixmap(32, 32)
+        icon_pixmap.fill(QColor(52, 152, 219))  # Blue background
+        painter = QPainter(icon_pixmap)
+        painter.setPen(QColor(255, 255, 255))
+        painter.drawText(icon_pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "H")
+        painter.end()
+        tray_icon.setIcon(QIcon(icon_pixmap))
         
         # Create context menu
         tray_menu = QMenu()
