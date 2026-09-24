@@ -22,6 +22,7 @@ Thumbs.db
 # Config (sensitive)
 .env
 .env.local
+.env.proxy
 config.local.yaml
 config.local.yml
 *.key
