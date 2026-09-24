@@ -80,7 +80,7 @@ class HermesDiscordClient:
         self.bot_token = os.getenv("DISCORD_BOT_TOKEN")
         discord_config = self.config.get("discord", {})
         self.channel_id = os.getenv("DISCORD_CHANNEL_ID", str(discord_config.get("channel_id", "1552636595532865587")))
-        self.hermes_user_id = os.getenv("HERMES_USER_ID", str(discord_config.get("hermes_user_id", "371369636924751873")))
+        self.hermes_user_id = os.getenv("HERMES_USER_ID", str(discord_config.get("hermes_user_id", "1538998656030609509")))
         
         # Message tracking
         self.last_message_id = None

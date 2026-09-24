@@ -105,7 +105,7 @@ def setup_discord():
     # Hermes user ID
     hermes_user_id = ask_input(
         "Hermes User ID (the bot/user that responds)",
-        default="371369636924751873"
+        default="1538998656030609509"
     )
     
     # Write .env file
