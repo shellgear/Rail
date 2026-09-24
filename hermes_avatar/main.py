@@ -8,6 +8,7 @@ desktop application that stays on top and interacts with Hermes via API.
 import sys
 import yaml
 import time
+import threading
 from pathlib import Path
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, 
@@ -19,6 +20,7 @@ from PyQt6.QtGui import QIcon, QAction
 from .screen_capture import ScreenCapture
 from .chat_window import ChatWindow
 from .sprite_animator import SpriteAnimator
+from .discord_client import HermesDiscordClient
 
 
 class HermesAvatar(QMainWindow):
@@ -37,10 +39,14 @@ class HermesAvatar(QMainWindow):
         self.screen_capture = ScreenCapture(config_path)
         self.sprite_animator = SpriteAnimator(config_path)
         self.chat_window = None
+        self.discord_client = None
         
         # Setup UI
         self.setup_ui()
         self.setup_tray()
+        
+        # Initialize Discord client (non-blocking)
+        self.init_discord()
         
         # Start periodic screen capture
         if self.config.get("screen_capture", {}).get("enabled", True):
@@ -145,16 +151,70 @@ class HermesAvatar(QMainWindow):
         self.chat_window.raise_()
         self.chat_window.activateWindow()
     
+    def init_discord(self):
+        """Initialize Discord client in background thread."""
+        try:
+            import threading
+            import os
+            
+            # Check if Discord token is set
+            if not os.getenv("DISCORD_BOT_TOKEN"):
+                print("⚠️  DISCORD_BOT_TOKEN not set. Run 'python setup.py' to configure.")
+                return
+            
+            print("🤖 Initializing Discord client...")
+            
+            def start_discord():
+                try:
+                    self.discord_client = HermesDiscordClient()
+                    
+                    # Register callbacks
+                    self.discord_client.register_response_callback(self._show_hermes_response)
+                    
+                    # Start bot (blocking call in background thread)
+                    print("🤖 Starting Discord bot...")
+                    self.discord_client.start()
+                    
+                except Exception as e:
+                    print(f"❌ Discord initialization failed: {e}")
+            
+            # Start in background thread to avoid blocking UI
+            thread = threading.Thread(target=start_discord, daemon=True)
+            thread.start()
+            
+        except Exception as e:
+            print(f"❌ Failed to initialize Discord: {e}")
+    
     def _handle_user_message(self, message: str):
-        """Handle message from user to Hermes."""
-        # TODO: Send message to Hermes API
-        print(f"User message: {message}")
+        """Handle message from user to Hermes via Discord."""
+        print(f"📤 Sending to Hermes: {message}")
         
         # Show thinking animation
         self.sprite_animator.set_state("think")
         
-        # Simulate response (replace with actual API call)
-        QTimer.singleShot(2000, lambda: self._show_hermes_response("Questo è un messaggio di test da Hermes!"))
+        # Send message via Discord if client is ready
+        if self.discord_client:
+            try:
+                def send():
+                    try:
+                        import asyncio
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        loop.run_until_complete(
+                            self.discord_client.send_message(f"👤 User: {message}")
+                        )
+                        loop.close()
+                    except Exception as e:
+                        print(f"Error sending message: {e}")
+                
+                thread = threading.Thread(target=send, daemon=True)
+                thread.start()
+            except Exception as e:
+                print(f"Failed to send message: {e}")
+        else:
+            # Fallback: simulated response
+            print("⚠️  Discord not ready, showing simulated response")
+            QTimer.singleShot(2000, lambda: self._show_hermes_response("⚠️ Discord non configurato. Esegui 'python setup.py'"))
     
     def _show_hermes_response(self, text: str):
         """Show Hermes response in chat window."""

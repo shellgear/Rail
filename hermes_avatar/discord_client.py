@@ -105,7 +105,11 @@ class HermesDiscordClient:
     
     def register_message_callback(self, callback: Callable[[str], None]):
         """Register a callback for incoming messages from Hermes."""
-        self.response_callbacks.append(callback)
+        self.message_callbacks.append(callback)
+    
+    def register_response_callback(self, callback: Callable[[str], None]):
+        """Alias for register_message_callback."""
+        self.message_callbacks.append(callback)
     
     def register_capture_callback(self, callback: Callable[[Dict[str, Any]], None]):
         """Register a callback for capture results."""
@@ -138,8 +142,8 @@ class HermesDiscordClient:
         if message.content:
             logger.info(f"Received from Hermes: {message.content}")
             
-            # Call response callbacks
-            for callback in self.response_callbacks:
+            # Call message callbacks (for Hermes responses)
+            for callback in self.message_callbacks:
                 try:
                     callback(message.content)
                 except Exception as e:
