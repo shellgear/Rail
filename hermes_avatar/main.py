@@ -167,10 +167,12 @@ class HermesAvatar(QMainWindow):
             def start_discord():
                 try:
                     self.discord_client = HermesDiscordClient()
-                    
-                    # Register callbacks
-                    self.discord_client.register_response_callback(self._show_hermes_response)
-                    
+
+                    # Register callbacks - wrap in QTimer.singleShot to ensure GUI updates happen in main thread
+                    def show_hermes_wrapper(text):
+                        QTimer.singleShot(0, lambda: self._show_hermes_response(text))
+                    self.discord_client.register_response_callback(show_hermes_wrapper)
+
                     # Start bot (blocking call in background thread)
                     print("🤖 Starting Discord bot...")
                     self.discord_client.start()
@@ -231,11 +233,12 @@ class HermesAvatar(QMainWindow):
             if result.get("success"):
                 analysis = result.get("analysis")
                 print(f"Hermes analysis: {analysis}")
-                self._show_hermes_response(analysis)
+                # Use QTimer.singleShot to ensure GUI update happens in main thread
+                QTimer.singleShot(0, lambda: self._show_hermes_response(analysis))
             else:
                 error = result.get("error")
                 print(f"Capture error: {error}")
-        
+
         self.screen_capture.start_periodic_capture(callback=on_capture_result)
     
     def setup_tray(self):
