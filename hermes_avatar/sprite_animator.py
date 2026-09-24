@@ -81,7 +81,7 @@ class SpriteAnimator:
         self.idle_frames = self.load_frames("idle")
         
         # Set initial frame (scaled)
-        initial_pixmap = self.idle_frames[0].scaled(width, height, 1, 2)  # Qt.AspectRatioMode.KeepAspectRatio, Qt.SmoothTransformation
+        initial_pixmap = self.idle_frames[0].scaled(width, height, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         avatar.setPixmap(initial_pixmap)
         
         # Setup animation timer
@@ -105,7 +105,7 @@ class SpriteAnimator:
         
         self.current_frame = (self.current_frame + 1) % len(frames)
         # Scale to widget size
-        scaled_pixmap = frames[self.current_frame].scaled(widget.width(), widget.height(), 1, 2)  # KeepAspectRatio, SmoothTransformation
+        scaled_pixmap = frames[self.current_frame].scaled(widget.width(), widget.height(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         widget.setPixmap(scaled_pixmap)
     
     def set_state(self, state: str):
