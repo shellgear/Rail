@@ -111,7 +111,7 @@ async def send_message(
         # Add HMAC signature if secret is configured
         if WEBHOOK_SECRET:
             signature = create_hmac_signature(payload_json, WEBHOOK_SECRET)
-            headers["X-Webhook-Signature"] = f"sha256={signature}"
+            headers["X-Webhook-Signature"] = signature
         
         # Send request to Hermes webhook
         async with httpx.AsyncClient(timeout=30.0) as client:
