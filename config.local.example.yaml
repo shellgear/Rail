@@ -1,0 +1,19 @@
+# Local Configuration (config.local.yaml)
+# Copy this to config.local.yaml and fill in your settings
+# DO NOT commit config.local.yaml to git!
+
+# Discord integration
+discord:
+  channel_id: "1552636595532865587"  # Channel where Rail communicates with Hermes
+  hermes_user_id: "371369636924751873"  # Hermes user/bot ID
+
+# Optional: Override screen capture settings
+# screen_capture:
+#   interval_seconds: 30
+#   enabled: true
+
+# Optional: Override avatar settings
+# avatar:
+#   width: 200
+#   height: 200
+#   position: "top-right"

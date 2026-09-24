@@ -51,20 +51,39 @@ pip install -r requirements.txt
 # Verifica l'installazione
 python -c "import PyQt6; print('PyQt6 OK')"
 python -c "from PIL import Image; print('Pillow OK')"
+python -c "import discord; print('discord.py OK')"
 ```
 
-### Passo 4: Configura Hermes API (opzionale ma consigliato)
+### Passo 4: Configura Rail (Wizard interattivo)
 
-Modifica `config.yaml` per puntare al tuo endpoint Hermes:
+**IMPORTANTE**: Non modificare manualmente i file di configurazione sensibili! Usa il wizard:
 
-```yaml
-api:
-  endpoint: "http://localhost:8000/v1/chat/completions"  # Default Hermes locale
-  model: "qwen3.5-122b"  # Modello Hermes
-  timeout: 10
+```bash
+# Avvia il wizard di setup interattivo
+python setup.py
 ```
 
-**Se non hai Hermes locale configurato**, l'app funzionerà comunque ma con risposte simulate.
+Il wizard ti guiderà nella configurazione di:
+1. **Discord Bot Token** - Token del bot Discord per comunicare con Hermes
+2. **Discord Channel ID** - ID del canale dove Rail si connette (default: 1552636595532865587)
+3. **Hermes User ID** - ID dell'utente/bot Hermes (default: 371369636924751873)
+4. **Screen Capture Interval** - Intervallo screenshot (default: 30s)
+5. **Avatar Settings** - Dimensione e posizione (default: 200x200, top-right)
+
+Il wizard creerà:
+- `.env` - Contiene `DISCORD_BOT_TOKEN` (SENSITIVO - NON COMMITTARE!)
+- `config.local.yaml` - Contiene impostazioni locali (SENSITIVO - NON COMMITTARE!)
+
+**Per ottenere un Discord Bot Token**:
+1. Vai su https://discord.com/developers/applications
+2. Crea una nuova applicazione
+3. Vai alla sezione "Bot" e crea un bot
+4. Copia il token e incollalo nel wizard
+5. Invita il bot al tuo server con questi scope:
+   - `bot`
+   - `messages.read`
+   - `messages.send`
+   - **Abilita "Message Content Intent"** nelle impostazioni del bot
 
 ### Passo 5: Avvia l'applicazione
 

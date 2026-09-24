@@ -1,13 +1,18 @@
 # Hermes Avatar Configuration
+# 
+# This is the MAIN config template. DO NOT commit sensitive data here.
+# Use config.local.yaml for local overrides and .env for secrets.
+#
+# Run `python setup.py` to configure interactively.
 
 # Screen capture settings
 screen_capture:
   interval_seconds: 30  # 5-60 seconds (configurable)
   enabled: true
 
-# API settings
+# API settings (for future Hermes proxy integration)
 api:
-  endpoint: "http://localhost:8000/v1/chat/completions"  # Hermes local endpoint
+  endpoint: "http://localhost:8000/v1/chat/completions"  # Hermes local endpoint (TODO)
   model: "qwen3.5-122b"
   timeout: 10
   format: "base64"  # Send screenshots as base64
@@ -35,9 +40,19 @@ chat_window:
   position: "below_avatar"  # below, right, left
   auto_open_on_message: true
 
-# Hermes integration
+# Discord integration (configured via setup.py)
+# Channel ID and Hermes user ID are loaded from:
+#   1. Environment variables (DISCORD_CHANNEL_ID, HERMES_USER_ID)
+#   2. config.local.yaml
+#   3. Defaults (1552636595532865587, 371369636924751873)
+discord:
+  # These are just defaults - override in config.local.yaml or env vars
+  channel_id: "1552636595532865587"
+  hermes_user_id: "371369636924751873"
+
+# Hermes integration (TODO: Configure when proxy is set up)
 hermes:
   profile: "default"
   send_screenshots: true
   receive_suggestions: true
-  api_key_env: "HERMES_API_KEY"
+  # api_key_env: "HERMES_API_KEY"  # For future use
