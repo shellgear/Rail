@@ -26,6 +26,8 @@ from typing import Optional
 PROXY_TOKEN = os.getenv("HERMES_PROXY_TOKEN")
 WEBHOOK_URL = os.getenv("HERMES_WEBHOOK_URL", "http://localhost:8644/webhooks/rail-proxy")
 WEBHOOK_SECRET = os.getenv("HERMES_WEBHOOK_SECRET", "")
+PROXY_HOST = os.getenv("HERMES_PROXY_HOST", "0.0.0.0")
+PROXY_PORT = int(os.getenv("HERMES_PROXY_PORT", "8000"))
 
 if not PROXY_TOKEN:
     raise ValueError("HERMES_PROXY_TOKEN environment variable is required")
@@ -166,13 +168,14 @@ async def root():
 
 
 if __name__ == "__main__":
-    import uvicorn
-    
-    print("🚀 Hermes Proxy Server")
-    print(f"📡 Webhook URL: {WEBHOOK_URL}")
-    print(f"🔐 Token configured: {'Yes' if PROXY_TOKEN else 'No'}")
-    print()
-    print("Start your Rail avatar to connect!")
-    print()
-    
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+	import uvicorn
+	
+	print("🚀 Hermes Proxy Server")
+	print(f"📡 Webhook URL: {WEBHOOK_URL}")
+	print(f"🔐 Token configured: {'Yes' if PROXY_TOKEN else 'No'}")
+	print(f"🌐 Listening on: {PROXY_HOST}:{PROXY_PORT}")
+	print()
+	print("Start your Rail avatar to connect!")
+	print()
+	
+	uvicorn.run(app, host=PROXY_HOST, port=PROXY_PORT)
