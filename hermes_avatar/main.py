@@ -193,17 +193,15 @@ class HermesAvatar(QMainWindow):
         self.sprite_animator.set_state("think")
         
         # Send message via Discord if client is ready
-        if self.discord_client:
+        if self.discord_client and self.discord_client.bot.is_ready():
             try:
                 def send():
                     try:
                         import asyncio
-                        loop = asyncio.new_event_loop()
-                        asyncio.set_event_loop(loop)
-                        loop.run_until_complete(
+                        # Use asyncio.run() which handles the event loop correctly
+                        asyncio.run(
                             self.discord_client.send_message(f"👤 User: {message}")
                         )
-                        loop.close()
                     except Exception as e:
                         print(f"Error sending message: {e}")
                 
@@ -214,7 +212,7 @@ class HermesAvatar(QMainWindow):
         else:
             # Fallback: simulated response
             print("⚠️  Discord not ready, showing simulated response")
-            QTimer.singleShot(2000, lambda: self._show_hermes_response("⚠️ Discord non configurato. Esegui 'python setup.py'"))
+            QTimer.singleShot(2000, lambda: self._show_hermes_response("⚠️ Discord non pronto. Attendi qualche secondo..."))
     
     def _show_hermes_response(self, text: str):
         """Show Hermes response in chat window."""
