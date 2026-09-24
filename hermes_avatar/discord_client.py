@@ -99,6 +99,9 @@ class HermesDiscordClient:
         self.bot.event(self.on_ready)
         self.bot.event(self.on_message)
         
+        # Store reference to event loop for async calls from other threads
+        self.loop = None
+        
         # Callbacks
         self.message_callbacks = []
         self.response_callbacks = []
@@ -119,6 +122,9 @@ class HermesDiscordClient:
         """Called when bot is ready."""
         logger.info(f"Discord bot logged in as {self.bot.user}")
         logger.info(f"Bot ID: {self.bot.user.id}")
+        
+        # Save reference to event loop for async calls from other threads
+        self.loop = asyncio.get_running_loop()
         
         # Find the channel
         try:
@@ -179,6 +185,33 @@ class HermesDiscordClient:
             
         except Exception as e:
             logger.error(f"Failed to send message: {e}")
+            return None
+    
+    def send_message_sync(self, content: str, image_path: str = None) -> Optional[discord.Message]:
+        """
+        Synchronous wrapper for send_message - can be called from other threads.
+        
+        Args:
+            content: Text message to send
+            image_path: Optional path to image file to attach
+            
+        Returns:
+            The sent message, or None if failed
+        """
+        if self.loop is None:
+            logger.error("Bot not ready (loop not set)")
+            return None
+        
+        try:
+            # Use run_coroutine_threadsafe to schedule the coroutine in the bot's event loop
+            future = asyncio.run_coroutine_threadsafe(
+                self.send_message(content, image_path),
+                self.loop
+            )
+            # Wait for the result (with timeout)
+            return future.result(timeout=10)
+        except Exception as e:
+            logger.error(f"Failed to send message (sync): {e}")
             return None
     
     async def send_screenshot(self, screenshot_data: bytes, description: str = "") -> Optional[discord.Message]:

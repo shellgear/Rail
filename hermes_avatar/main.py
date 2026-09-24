@@ -197,11 +197,12 @@ class HermesAvatar(QMainWindow):
             try:
                 def send():
                     try:
-                        import asyncio
-                        # Use asyncio.run() which handles the event loop correctly
-                        asyncio.run(
-                            self.discord_client.send_message(f"👤 User: {message}")
-                        )
+                        # Use synchronous wrapper that works from other threads
+                        result = self.discord_client.send_message_sync(f"👤 User: {message}")
+                        if result:
+                            print(f"✅ Message sent to Discord: {result.id}")
+                        else:
+                            print("❌ Failed to send message")
                     except Exception as e:
                         print(f"Error sending message: {e}")
                 
