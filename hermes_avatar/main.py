@@ -193,12 +193,14 @@ class HermesAvatar(QMainWindow):
         self.sprite_animator.set_state("think")
         
         # Send message via Discord if client is ready
+        # Add special prefix so Hermes knows to respond (not ignore as bot-to-bot)
         if self.discord_client and self.discord_client.bot.is_ready():
             try:
                 def send():
                     try:
-                        # Use synchronous wrapper that works from other threads
-                        result = self.discord_client.send_message_sync(f"👤 User: {message}")
+                        # Add prefix to ensure Hermes processes this message
+                        formatted_message = f"🚂 [Rail Avatar]: {message}"
+                        result = self.discord_client.send_message_sync(formatted_message)
                         if result:
                             print(f"✅ Message sent to Discord: {result.id}")
                         else:

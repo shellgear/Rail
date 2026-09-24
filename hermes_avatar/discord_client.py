@@ -144,7 +144,7 @@ class HermesDiscordClient:
         if str(message.author.id) != str(self.hermes_user_id):
             return
         
-        # Process Hermes response
+        # Process Hermes response (works in channels AND threads)
         if message.content:
             logger.info(f"Received from Hermes: {message.content}")
             
