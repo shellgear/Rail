@@ -168,6 +168,10 @@ def setup_screen_capture():
         with open(config_path, 'r') as f:
             config = yaml.safe_load(f)
         
+        # Handle empty YAML file (safe_load returns None)
+        if config is None:
+            config = {}
+        
         if 'screen_capture' not in config:
             config['screen_capture'] = {}
         config['screen_capture']['interval_seconds'] = interval
@@ -206,6 +210,10 @@ def setup_avatars():
     if config_path.exists():
         with open(config_path, 'r') as f:
             config = yaml.safe_load(f)
+        
+        # Handle empty YAML file (safe_load returns None)
+        if config is None:
+            config = {}
         
         if 'avatar' not in config:
             config['avatar'] = {}
