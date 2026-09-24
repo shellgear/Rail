@@ -74,10 +74,33 @@ class HermesAvatar(QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
+        # Close button (top-right corner of avatar)
+        self.close_button = QPushButton("✕")
+        self.close_button.setFixedSize(24, 24)
+        self.close_button.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(231, 76, 60, 0.8);
+                color: white;
+                border: none;
+                border-radius: 12px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: rgba(192, 57, 43, 1);
+            }
+        """)
+        self.close_button.clicked.connect(self._on_close_click)
+        
         # Avatar display
-        self.avatar_label = self.sprite_animator.create_avatar_widget(width, height)
+        self.avatar_label = self.sprite_animator.create_avatar_widget(width - 30, height - 30)
         self.avatar_label.mousePressEvent = self._on_avatar_click
-        layout.addWidget(self.avatar_label)
+        
+        # Create a container layout for avatar + close button
+        avatar_layout = QVBoxLayout()
+        avatar_layout.addWidget(self.close_button, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        avatar_layout.addWidget(self.avatar_label)
+        layout.addLayout(avatar_layout)
         
         # Position window
         self._position_window()
@@ -193,6 +216,10 @@ class HermesAvatar(QMainWindow):
         else:
             self.screen_capture.start_periodic_capture()
             print("Screen capture started")
+    
+    def _on_close_click(self):
+        """Handle close button click."""
+        self.close()
     
     def closeEvent(self, event):
         """Handle window close - minimize to tray instead of quit."""

@@ -24,9 +24,8 @@ Thumbs.db
 *.key
 *.pem
 
-# Assets (will be added later)
-assets/hermes_girl/*
-!assets/hermes_girl/.gitkeep
+# Assets (sprite sheets included)
+# assets/hermes_girl/ is tracked in the repo
 
 # Logs
 *.log

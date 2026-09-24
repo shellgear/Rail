@@ -2,14 +2,16 @@
 Sprite animator module - handles pixel art animations for Hermes Girl avatar.
 
 Inspired by 1990s fighting games (Metaslug style) with frame-based animations.
+Uses real sprite sheets from assets/hermes_girl/ directory.
 """
 
 from PyQt6.QtWidgets import QLabel, QApplication
-from PyQt6.QtGui import QPixmap, QPainter, QPalette, QColor
-from PyQt6.QtCore import QTimer, Qt, QRect
+from PyQt6.QtGui import QPixmap
+from PyQt6.QtCore import QTimer, Qt
 from pathlib import Path
 import yaml
-import os
+
+from .avatar_loader import AvatarLoader
 
 
 class SpriteAnimator:
@@ -25,78 +27,49 @@ class SpriteAnimator:
         self.current_frame = 0
         self.frame_timer = None
         
-        # Sprite sheet paths
-        self.assets_dir = Path(__file__).parent.parent / "assets" / "hermes_girl"
+        # Avatar loader for real sprites
+        self.loader = AvatarLoader(config_path)
         
         # Animation states
         self.states = {
             "idle": {"frames": self.anim_config.get("idle_frames", 4), "fps": self.anim_config.get("fps", 12)},
             "speak": {"frames": self.anim_config.get("speak_frames", 6), "fps": self.anim_config.get("fps", 12)},
-            "think": {"frames": self.anim_config.get("think_frames", 3), "fps": self.anim_config.get("fps", 12)},
+            "think": {"frames": self.anim_config.get("think_frames", 4), "fps": self.anim_config.get("fps", 12)},
             "alert": {"frames": self.anim_config.get("alert_frames", 4), "fps": self.anim_config.get("fps", 15)},
         }
+        
+        # Loaded sprite frames (per state)
+        self.frames_cache = {}
         
     def _load_config(self, config_path: str) -> dict:
         with open(config_path, 'r') as f:
             return yaml.safe_load(f)
     
-    def get_sprite_path(self, state: str, frame: int) -> Path:
-        """Get path to sprite frame image."""
-        # Expected structure: assets/hermes_girl/{state}/{frame}.png
-        sprite_path = self.assets_dir / state / f"{frame}.png"
-        return sprite_path if sprite_path.exists() else None
-    
-    def load_sprite_sheet(self, state: str) -> list:
-        """Load all frames for an animation state."""
+    def load_frames(self, state: str) -> list:
+        """Load all frames for an animation state from sprite sheets."""
+        if state in self.frames_cache:
+            return self.frames_cache[state]
+        
         frames = []
-        sprite_dir = self.assets_dir / state
+        state_config = self.states.get(state, {"frames": 4})
+        num_frames = state_config["frames"]
         
-        if not sprite_dir.exists():
-            # Return placeholder if directory doesn't exist
-            print(f"Warning: Sprite directory {sprite_dir} not found. Using placeholder.")
-            return frames
+        # Load from assets directory
+        state_dir = self.loader.assets_dir / state
+        if state_dir.exists():
+            for i in range(num_frames):
+                frame_path = state_dir / f"{i}.png"
+                if frame_path.exists():
+                    frames.append(QPixmap(str(frame_path)))
+                else:
+                    break  # Stop if frame doesn't exist
         
-        for i in range(self.states[state]["frames"]):
-            frame_path = sprite_dir / f"{i}.png"
-            if frame_path.exists():
-                frames.append(QPixmap(str(frame_path)))
-            else:
-                # Create placeholder frame
-                frames.append(self._create_placeholder(state, i))
+        # Fallback to loader if no frames found
+        if not frames:
+            frames = [self.loader.get_avatar_image((64, 64))]
         
+        self.frames_cache[state] = frames
         return frames
-    
-    def _create_placeholder(self, state: str, frame: int) -> QPixmap:
-        """Create a placeholder sprite for development."""
-        width, height = 64, 64  # Default sprite size
-        pixmap = QPixmap(width, height)
-        pixmap.fill(Qt.GlobalColor.transparent)
-        
-        painter = QPainter(pixmap)
-        
-        # Simple pixel art placeholder (will be replaced with real sprites)
-        # Color based on state
-        colors = {
-            "idle": QColor(52, 152, 219),    # Blue
-            "speak": QColor(46, 204, 113),   # Green
-            "think": QColor(155, 89, 182),   # Purple
-            "alert": QColor(231, 76, 60),    # Red
-        }
-        color = colors.get(state, QColor(127, 140, 141))
-        
-        # Draw simple pixel art shape (circle-ish)
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(color)
-        painter.drawEllipse(8, 8, 48, 48)
-        
-        # Add simple face
-        painter.setBrush(QColor(255, 255, 255))
-        painter.drawEllipse(20, 20, 10, 10)  # Left eye
-        painter.drawEllipse(44, 20, 10, 10)  # Right eye
-        
-        painter.end()
-        
-        return pixmap
     
     def create_avatar_widget(self, width: int = 200, height: int = 200) -> QLabel:
         """Create a QLabel widget that displays animated avatar."""
@@ -105,31 +78,35 @@ class SpriteAnimator:
         avatar.setScaledContents(True)
         
         # Load idle animation frames
-        self.idle_frames = self.load_sprite_sheet("idle")
-        if not self.idle_frames:
-            # Create initial placeholder
-            self.idle_frames = [self._create_placeholder("idle", 0)]
+        self.idle_frames = self.load_frames("idle")
         
-        # Set initial frame
-        avatar.setPixmap(self.idle_frames[0])
+        # Set initial frame (scaled)
+        initial_pixmap = self.idle_frames[0].scaled(width, height, Qt.AspectMode.KeepAspectRatio, Qt.Transformation.SmoothTransformation)
+        avatar.setPixmap(initial_pixmap)
         
         # Setup animation timer
         fps = self.states["idle"]["fps"]
         interval = 1000 // fps
         
         self.frame_timer = QTimer()
-        self.frame_timer.timeout.connect(lambda: self._animate(avatar, self.idle_frames))
+        self.frame_timer.timeout.connect(lambda: self._animate(avatar))
         self.frame_timer.start(interval)
+        
+        # Store reference to avatar for timer
+        self.current_avatar = avatar
         
         return avatar
     
-    def _animate(self, widget: QLabel, frames: list):
+    def _animate(self, widget: QLabel):
         """Advance animation frame."""
+        frames = self.load_frames(self.current_state)
         if not frames:
             return
         
         self.current_frame = (self.current_frame + 1) % len(frames)
-        widget.setPixmap(frames[self.current_frame])
+        # Scale to widget size
+        scaled_pixmap = frames[self.current_frame].scaled(widget.width(), widget.height(), Qt.AspectMode.KeepAspectRatio, Qt.Transformation.SmoothTransformation)
+        widget.setPixmap(scaled_pixmap)
     
     def set_state(self, state: str):
         """Change animation state (idle, speak, think, alert)."""
@@ -137,10 +114,19 @@ class SpriteAnimator:
             print(f"Unknown state: {state}")
             return
         
+        if state == self.current_state:
+            return  # No change needed
+        
         self.current_state = state
-        # Will be updated by the main window when state changes
-        # This is a placeholder - actual implementation loads new frames
-        print(f"Animation state changed to: {state}")
+        self.current_frame = 0  # Reset frame when changing state
+        
+        # Reload frames for new state
+        self.load_frames(state)
+        
+        # Update animation timer speed
+        new_fps = self.states[state]["fps"]
+        new_interval = 1000 // new_fps
+        self.frame_timer.setInterval(new_interval)
     
     def set_speaking(self, is_speaking: bool = True):
         """Toggle speaking animation."""

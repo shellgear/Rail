@@ -146,11 +146,11 @@ class ChatWindow(QMainWindow):
         """Add a message to the chat area."""
         # Append to QTextEdit
         current_html = self.chat_area.toHtml()
-        if current_html == "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\" \"http://www.w3.org/TR/REC-html40/loose.dtd\">\n<p></p>":
+        if current_html == "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\" \"http://www.w3.org/TR/REC-html40/loose.dtd\">\n<p></p>" or not current_html.strip():
             current_html = ""
         
         color = "#2ecc71" if is_user else "#e74c3c"
-        prefix = "👤 " if is_user else "🤖 Hermes: "
+        prefix = "Tu: " if is_user else "Hermes: "
         
         new_html = f"{current_html}<p style='margin: 5px 0; color: {color};'><strong>{prefix}</strong>{text}</p>"
         self.chat_area.setHtml(new_html)
